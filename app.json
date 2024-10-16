@@ -1,0 +1,7 @@
+{
+  "name": "AnotherMTG",
+  "slug": "AnotherMTG",
+  "android": {
+    "package": "com.anonymous.AnotherMTG"
+  }
+}
