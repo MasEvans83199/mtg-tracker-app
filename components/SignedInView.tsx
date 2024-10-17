@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import tw from '../tailwind';
 
 interface SignedInViewProps {
@@ -10,8 +9,6 @@ interface SignedInViewProps {
 const SignedInView: React.FC<SignedInViewProps> = ({ onSignOut }) => {
   const handleSignOut = async () => {
     try {
-      await GoogleSignin.revokeAccess();
-      await GoogleSignin.signOut();
       onSignOut();
     } catch (error) {
       Alert.alert('Error', 'An error occurred while signing out');
