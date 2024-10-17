@@ -4,6 +4,7 @@ import * as Font from 'expo-font';
 import { debounce } from 'lodash';
 import { View, Text, Pressable, Animated, Modal, TextInput } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { Ionicons } from '@expo/vector-icons';
 import tw from './tailwind';
 import { User, Player, Preset } from './types';
@@ -19,7 +20,6 @@ import WelcomeScreen from './components/WelcomeScreen';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import PasswordReset from './components/PasswordReset';
-import SignedInView from './components/SignedInView';
 import { signOut } from '@react-native-firebase/auth';
 import firebase from './src/firebaseConfig';
 
@@ -936,14 +936,22 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       />
     )}
     {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'multiplayerSetup' && (
+      <>
+      <Pressable
+        onPress={handleBack}
+      ><Ionicons style={tw `ml-6`}name="arrow-back" size={24} color="black" /></Pressable>
       <MultiplayerSetup 
         onCreateGame={handleCreateGame}
         onJoinGame={handleJoinGame}
         onBack={handleBack}
       />
+      </>
     )}
     {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'game' && (
       <>
+      <Pressable
+        onPress={handleBack}
+      ><Ionicons name="arrow-back" size={24} color="black" /></Pressable>
       <Text style={tw`text-3xl font-bold text-center mb-4`}>MTG Life Counter</Text>
       {roomCode && <RoomCodeDisplay roomCode={roomCode} />}
       {showMiniTimer && (
