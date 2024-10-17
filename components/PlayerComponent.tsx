@@ -101,8 +101,8 @@ const PlayerComponent: React.FC<PlayerComponentProps> = ({
   };
   
   const containerStyle = isSmall 
-    ? tw`w-full aspect-[3/4] rounded-lg overflow-hidden`
-    : tw`w-full max-w-xs aspect-[3/4] rounded-lg overflow-hidden`;
+  ? tw`h-64 w-full rounded-lg overflow-hidden` // Fixed height for small cards
+  : tw`h-80 w-full max-w-xs rounded-lg overflow-hidden`; // Fixed height for larger cards
 
   const contentStyle = isSmall
     ? tw`flex-1 bg-black bg-opacity-30 p-2 ${player.isDead ? 'opacity-50' : ''}`
