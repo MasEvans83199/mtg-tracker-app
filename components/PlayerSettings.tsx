@@ -44,69 +44,78 @@ const PlayerSettings: React.FC<PlayerSettingsProps> = ({ visible, player, onUpda
   }
 
   return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
-      <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-        <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-          <Text style={tw`text-lg font-bold mb-2`}>Player Settings</Text>
+    <Modal visible={visible} animationType="fade" transparent={true}>
+      <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-80`}>
+        <View style={tw`bg-gray-800 p-6 rounded-lg w-11/12 max-w-md`}>
+          <Text style={tw`text-2xl font-bold mb-4 text-blue-400`}>Player Settings</Text>
           <TextInput
-            style={tw`border border-gray-300 rounded p-2 mb-4`}
+            style={tw`bg-gray-700 text-white border border-gray-600 rounded-lg p-3 mb-4`}
             value={name}
             onChangeText={setName}
             placeholder="Enter player name"
+            placeholderTextColor="#9CA3AF"
           />
           <Pressable
-            style={tw`bg-blue-500 p-2 rounded mb-2`}
+            style={({ pressed }) => tw`${pressed ? 'bg-blue-700' : 'bg-blue-600'} p-3 rounded-lg mb-3`}
             onPress={() => setShowCardArtSelector(true)}
           >
-            <Text style={tw`text-white text-center`}>Change Card Art</Text>
+            <Text style={tw`text-white text-center font-semibold`}>Change Card Art</Text>
           </Pressable>
           <Pressable
-            style={tw`bg-purple-500 p-2 rounded mb-2`}
+            style={({ pressed }) => tw`${pressed ? 'bg-purple-700' : 'bg-purple-600'} p-3 rounded-lg mb-3`}
             onPress={() => setShowStats(true)}
           >
-            <Text style={tw`text-white text-center`}>View Player Stats</Text>
+            <Text style={tw`text-white text-center font-semibold`}>View Player Stats</Text>
           </Pressable>
           {icon && (
             <Image
               source={{ uri: icon }}
-              style={tw`w-20 h-20 rounded self-center mb-2`}
+              style={tw`w-24 h-24 rounded-lg self-center mb-4`}
             />
           )}
-          <Pressable
-            style={tw`bg-green-500 p-2 rounded mb-2`}
-            onPress={handleUpdate}
-          >
-            <Text style={tw`text-white text-center`}>Update</Text>
-          </Pressable>
-          <Pressable
-            style={tw`bg-red-500 p-2 rounded`}
-            onPress={onClose}
-          >
-            <Text style={tw`text-white text-center`}>Cancel</Text>
-          </Pressable>
+          <View style={tw`flex-row justify-between`}>
+            <Pressable
+              style={({ pressed }) => tw`${pressed ? 'bg-green-700' : 'bg-green-600'} p-3 rounded-lg flex-1 mr-2`}
+              onPress={handleUpdate}
+            >
+              <Text style={tw`text-white text-center font-semibold`}>Update</Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => tw`${pressed ? 'bg-red-700' : 'bg-red-600'} p-3 rounded-lg flex-1 ml-2`}
+              onPress={onClose}
+            >
+              <Text style={tw`text-white text-center font-semibold`}>Cancel</Text>
+            </Pressable>
+          </View>
         </View>
       </View>
       <Modal visible={showCardArtSelector} animationType="slide">
-        <CardArtSelector onSelectArt={handleSelectArt} />
-        <Pressable
-          style={tw`bg-red-500 p-2 m-4 rounded`}
-          onPress={() => setShowCardArtSelector(false)}
-        >
-          <Text style={tw`text-white text-center`}>Close</Text>
-        </Pressable>
+        <View style={tw`flex-1 bg-gray-900`}>
+          <CardArtSelector onSelectArt={handleSelectArt} />
+          <View style={tw`bg-gray-900 p-4`}>
+            <Pressable
+              style={({ pressed }) => tw`${pressed ? 'bg-red-700' : 'bg-red-600'} p-3 rounded-lg`}
+              onPress={() => setShowCardArtSelector(false)}
+            >
+              <Text style={tw`text-white text-center font-semibold`}>Close</Text>
+            </Pressable>
+          </View>
+        </View>
       </Modal>
-      <Modal visible={showStats} animationType="slide">
-        {player && player.stats ? (
-          <PlayerStats stats={player.stats} name={player.name} />
-        ) : (
-          <Text>No stats available</Text>
-        )}
-        <Pressable
-          style={tw`bg-red-500 p-2 m-4 rounded`}
-          onPress={() => setShowStats(false)}
-        >
-          <Text style={tw`text-white text-center font-bold`}>Close</Text>
-        </Pressable>
+      <Modal visible={showStats} animationType="fade">
+        <View style={tw`flex-1 bg-gray-900 p-4`}>
+          {player && player.stats ? (
+            <PlayerStats stats={player.stats} name={player.name} />
+          ) : (
+            <Text style={tw`text-white text-center text-lg`}>No stats available</Text>
+          )}
+          <Pressable
+            style={({ pressed }) => tw`${pressed ? 'bg-red-700' : 'bg-red-600'} p-3 mt-4 rounded-lg`}
+            onPress={() => setShowStats(false)}
+          >
+            <Text style={tw`text-white text-center font-semibold`}>Close</Text>
+          </Pressable>
+        </View>
       </Modal>
     </Modal>
   );

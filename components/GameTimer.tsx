@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import tw from '../tailwind';
 
@@ -46,41 +46,35 @@ const GameTimer: React.FC<GameTimerProps> = ({
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const TimerButton = ({ onPress, color, text }: { onPress: () => void; color: string; text: string }) => (
+    <Pressable
+      style={({ pressed }) => tw`${pressed ? `${color}-700` : `${color}-600`} p-3 rounded-lg mb-3`}
+      onPress={onPress}
+    >
+      <Text style={tw`text-white font-semibold text-center`}>{text}</Text>
+    </Pressable>
+  );
+
   return (
-    <View style={tw`bg-gray-100 p-4 rounded-lg`}>
-      <Text style={tw`text-xl font-bold text-center mb-2`}>Game Timer</Text>
-      <Text style={tw`text-3xl font-bold text-center mb-4`}>
+    <View style={tw`bg-gray-800 p-6 rounded-lg`}>
+      <Text style={tw`text-2xl font-bold text-center mb-2 text-blue-400`}>Game Timer</Text>
+      <Text style={tw`text-4xl font-bold text-center mb-6 text-white`}>
         {formatTime(timeLeft)}
       </Text>
-      <View style={tw`flex-row justify-around mb-4`}>
-        <Pressable onPress={() => setTimerDuration(5)} style={tw`bg-blue-500 p-2 rounded`}>
-          <Text style={tw`text-white`}>5 min</Text>
-        </Pressable>
-        <Pressable onPress={() => setTimerDuration(10)} style={tw`bg-blue-500 p-2 rounded`}>
-          <Text style={tw`text-white`}>10 min</Text>
-        </Pressable>
-        <Pressable onPress={() => setTimerDuration(15)} style={tw`bg-blue-500 p-2 rounded`}>
-          <Text style={tw`text-white`}>15 min</Text>
-        </Pressable>
+      <View style={tw`flex-row justify-around mb-6`}>
+        {[5, 10, 15].map((minutes) => (
+          <Pressable 
+            key={minutes}
+            onPress={() => setTimerDuration(minutes)} 
+            style={({ pressed }) => tw`${pressed ? 'bg-indigo-700' : 'bg-indigo-600'} px-4 py-2 rounded-lg`}
+          >
+            <Text style={tw`text-white font-semibold`}>{minutes} min</Text>
+          </Pressable>
+        ))}
       </View>
-      <Pressable
-        style={tw`bg-green-500 p-2 rounded-lg mb-2`}
-        onPress={startTimer}
-      >
-        <Text style={tw`text-white font-bold text-center`}>Start Timer</Text>
-      </Pressable>
-      <Pressable
-        style={tw`bg-red-500 p-2 rounded-lg mb-2`}
-        onPress={stopTimer}
-      >
-        <Text style={tw`text-white font-bold text-center`}>Stop Timer</Text>
-      </Pressable>
-      <Pressable
-        style={tw`bg-yellow-500 p-2 rounded-lg`}
-        onPress={resetTimer}
-      >
-        <Text style={tw`text-white font-bold text-center`}>Reset Timer</Text>
-      </Pressable>
+      <TimerButton onPress={startTimer} color="bg-green" text="Start Timer" />
+      <TimerButton onPress={stopTimer} color="bg-red" text="Stop Timer" />
+      <TimerButton onPress={resetTimer} color="bg-yellow" text="Reset Timer" />
     </View>
   );
 };

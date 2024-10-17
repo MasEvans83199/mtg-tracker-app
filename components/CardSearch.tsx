@@ -95,14 +95,14 @@ const CardSearch: React.FC<CardSearchProps> = ({ visible, onClose }) => {
       {item.image_uris?.small ? (
         <Image
           source={{ uri: item.image_uris.small }}
-          style={tw`w-20 h-28 rounded`}
+          style={tw`w-24 h-32 rounded-lg`}
         />
       ) : (
-        <View style={tw`w-20 h-28 bg-gray-300 rounded justify-center items-center`}>
-          <Text>No image</Text>
+        <View style={tw`w-24 h-32 bg-gray-700 rounded-lg justify-center items-center`}>
+          <Text style={tw`text-white`}>No image</Text>
         </View>
       )}
-      <Text style={tw`text-xs mt-1 text-center`}>{item.name}</Text>
+      <Text style={tw`text-xs mt-2 text-center text-white`}>{item.name}</Text>
     </Pressable>
   );
 
@@ -113,16 +113,16 @@ const CardSearch: React.FC<CardSearchProps> = ({ visible, onClose }) => {
 
     return (
       <View style={tw`mt-4`}>
-        <Text style={tw`text-lg font-bold mb-2`}>Legalities</Text>
+        <Text style={tw`text-lg font-bold mb-2 text-blue-400`}>Legalities</Text>
         {formatOrder.map((format) => {
           const legality = legalities[format] || 'not_legal';
-          const color = legality === 'legal' ? 'green' : legality === 'restricted' ? 'orange' : 'red';
+          const color = legality === 'legal' ? 'green' : legality === 'restricted' ? 'yellow' : 'red';
           const icon = legality === 'legal' ? 'checkmark-circle' : legality === 'restricted' ? 'alert-circle' : 'close-circle';
           
           return (
             <View key={format} style={tw`flex-row items-center mb-1`}>
               <Ionicons name={icon} size={16} color={color} style={tw`mr-2`} />
-              <Text style={tw`capitalize flex-1`}>{format}</Text>
+              <Text style={tw`capitalize flex-1 text-gray-300`}>{format}</Text>
               <Text style={tw`capitalize text-${color}-500`}>{legality.replace('_', ' ')}</Text>
             </View>
           );
@@ -133,47 +133,53 @@ const CardSearch: React.FC<CardSearchProps> = ({ visible, onClose }) => {
 
   return (
     <Modal visible={visible} animationType="slide">
-      <View style={tw`flex-1 p-4`}>
-        <Text style={tw`text-2xl font-bold mb-4`}>Card Search</Text>
-        <View style={tw`flex-row mb-4`}>
+      <View style={tw`flex-1 bg-gray-900 p-6`}>
+        <Text style={tw`text-3xl font-bold mb-6 text-blue-400`}>Card Search</Text>
+        <View style={tw`flex-row mb-6`}>
           <TextInput
-            style={tw`flex-1 border border-gray-300 rounded-l p-2`}
+            style={tw`flex-1 bg-gray-800 text-white border border-gray-700 rounded-l-lg p-3`}
             value={searchTerm}
             onChangeText={setSearchTerm}
             placeholder="Search for a card"
+            placeholderTextColor="#9CA3AF"
             onSubmitEditing={handleSearch}
           />
           <Pressable
-            style={tw`bg-blue-500 px-4 justify-center rounded-r`}
+            style={({ pressed }) => tw`${pressed ? 'bg-blue-700' : 'bg-blue-600'} px-6 justify-center rounded-r-lg`}
             onPress={handleSearch}
           >
-            <Text style={tw`text-white font-bold`}>Search</Text>
+            <Text style={tw`text-white font-semibold`}>Search</Text>
           </Pressable>
         </View>
-        {loading && <ActivityIndicator size="large" color="#0000ff" />}
-        {error && <Text style={tw`text-red-500 mb-2`}>{error}</Text>}
+        {loading && <ActivityIndicator size="large" color="#60A5FA" style={tw`my-4`} />}
+        {error && <Text style={tw`text-red-500 mb-4`}>{error}</Text>}
         <FlatList
           data={searchResults}
           renderItem={renderCardItem}
           keyExtractor={item => item.id}
           numColumns={3}
+          contentContainerStyle={tw`pb-4`}
         />
         {selectedCard && (
           <Modal visible={!!selectedCard} transparent={true} animationType="fade">
-            <View style={tw`flex-1 bg-black bg-opacity-50 justify-center items-center`}>
-              <View style={tw`bg-white p-4 rounded-lg flex-row max-w-4xl w-full`}>
-                <Image
-                  source={{ uri: selectedCard.image_uris?.normal }}
-                  style={tw`w-64 h-88 rounded`}
-                  resizeMode="contain"
-                />
-                <ScrollView style={tw`ml-4 flex-1`}>
-                  <Text style={tw`text-2xl font-bold mb-2`}>{selectedCard.name}</Text>
-                  <Text style={tw`text-gray-600 mb-4`}>{selectedCard.oracle_text}</Text>
+            <View style={tw`flex-1 bg-black bg-opacity-80 justify-center items-center p-4`}>
+              <View style={tw`bg-gray-800 p-6 rounded-lg w-full max-w-4xl max-h-[90%]`}>
+                <ScrollView>
+                  <View style={tw`flex-row mb-4`}>
+                    <Image
+                      source={{ uri: selectedCard.image_uris?.normal }}
+                      style={tw`w-48 h-64 rounded-lg`}
+                      resizeMode="contain"
+                    />
+                    <View style={tw`flex-1 ml-4`}>
+                      <Text style={tw`text-2xl font-bold mb-2 text-white`}>{selectedCard.name}</Text>
+                      <Text style={tw`text-gray-300 mb-4`}>{selectedCard.oracle_text}</Text>
+                    </View>
+                  </View>
                   {renderLegalities(selectedCard.legalities || {})}
                 </ScrollView>
                 <Pressable
-                  style={tw`absolute top-2 right-2 bg-red-500 p-2 rounded-full`}
+                  style={tw`absolute top-2 right-2 bg-red-600 p-2 rounded-full`}
                   onPress={() => setSelectedCard(null)}
                 >
                   <Ionicons name="close" size={24} color="white" />
@@ -183,14 +189,15 @@ const CardSearch: React.FC<CardSearchProps> = ({ visible, onClose }) => {
           </Modal>
         )}
         <Pressable
-          style={tw`bg-red-500 p-2 rounded mt-4`}
+          style={({ pressed }) => tw`${pressed ? 'bg-red-700' : 'bg-red-600'} p-3 rounded-lg mt-6`}
           onPress={handleClose}
         >
-          <Text style={tw`text-white text-center font-bold`}>Close</Text>
+          <Text style={tw`text-white text-center font-semibold`}>Close</Text>
         </Pressable>
       </View>
     </Modal>
   );
 };
+
 
 export default CardSearch;

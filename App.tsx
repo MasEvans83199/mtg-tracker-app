@@ -67,6 +67,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const [showJoinPopup, setShowJoinPopup] = useState(false);
   const [newPlayerName, setNewPlayerName] = useState('');
   const [selectedOpponent, setSelectedOpponent] = useState<Player | null>(null);
+  type IoniconsName = 'person-add' | 'refresh' | 'clipboard' | 'list' | 'save-outline' | 'search' | 'dice' | 'timer';
 
   const playersRef = useRef(players);
   const gameHistoryRef = useRef(gameHistory);
@@ -86,7 +87,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
           setPlayers(newGameState.players);
           setGameHistory(newGameState.gameHistory);
           setGameEnded(newGameState.gameEnded);
-  
+
           if (newGameState.gameEnded) {
             const winner = newGameState.players.find((p: Player) => p.hasCrown);
             if (winner) {
@@ -105,7 +106,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       return () => unsubscribe();
     }
   }, [isMultiplayer, gameId, currentPlayer]);
-  
+
   const loadPresets = async () => {
     try {
       const savedPresets = await AsyncStorage.getItem('presets');
@@ -133,10 +134,10 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
         console.error('Failed to save game state', error);
       }
     };
-  
+
     saveGameState();
   }, [players, gameHistory, gameEnded]);
-  
+
   useEffect(() => {
     const loadGameState = async () => {
       try {
@@ -163,10 +164,10 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       } catch (error) {
         console.error('Failed to load game state', error);
       }
-    };    
-  
+    };
+
     loadGameState();
-  }, []);    
+  }, []);
 
   useEffect(() => {
     if (isTimerActive && timeLeft > 0) {
@@ -174,12 +175,12 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     } else if (!isTimerActive && timerInterval) {
       clearInterval(timerInterval);
     }
-  
+
     return () => {
       if (timerInterval) clearInterval(timerInterval);
     };
-  }, [isTimerActive, timerDuration]); 
-  
+  }, [isTimerActive, timerDuration]);
+
   const handleSignOut = async () => {
     const auth = firebase.auth();
     try {
@@ -188,21 +189,21 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     } catch (error) {
       console.error('Error signing out: ', error);
     }
-  };  
+  };
 
   const savePresetWithIds = async () => {
     if (presetName.trim() === '') return;
-  
+
     const newPreset: Preset = {
       id: Date.now().toString(),
       name: presetName,
       players,
-      gameState: null 
+      gameState: null
     };
-  
+
     const updatedPresets = [...presets, newPreset];
     setPresets(updatedPresets);
-  
+
     try {
       await AsyncStorage.setItem('presets', JSON.stringify(updatedPresets));
       setPresetName('');
@@ -211,22 +212,22 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       console.error('Failed to save preset', error);
     }
   };
-  
+
   const loadPresetByIds = (presetId: number | string) => {
     const preset = presets.find(p => p.id === presetId);
-    
+
     if (preset) {
       setPlayers(preset.players);
-      
+
       const currentPlayerFromPreset = preset.players.find(p => p.id === currentPlayer?.id);
-      
+
       if (currentPlayerFromPreset) {
         setCurrentPlayer(currentPlayerFromPreset);
       }
-  
+
       setShowPresetModal(false);
     }
-  };  
+  };
 
   const debouncedSyncGameState = useCallback(
     debounce((gameState) => {
@@ -240,7 +241,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     }, 300),
     [isMultiplayer, gameId]
   );
-  
+
   const updateLocalState = (
     newPlayers: Player[],
     newGameHistory: string[],
@@ -249,8 +250,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setPlayers(newPlayers);
     setGameHistory(newGameHistory);
     setGameEnded(newGameEnded);
-  };  
-  
+  };
+
   const syncGameState = useCallback(() => {
     if (isMultiplayer && gameId) {
       updateGameState(gameId, {
@@ -260,11 +261,11 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       });
     }
   }, [isMultiplayer, gameId, players, gameHistory, gameEnded]);
-  
-  
+
+
   function generateUniqueId(): string {
     return Date.now().toString(36) + Math.random().toString(36).substr(2);
-  }  
+  }
 
   const handleStartLocalGame = () => {
     setIsMultiplayer(false);
@@ -302,13 +303,13 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
         gameHistory: [],
         gameEnded: false
       });
-  
+
       logEvent('Game created');
     } else {
       console.error('Failed to create game');
     }
   };
-  
+
   const handleJoinGame = async (id: string) => {
     const playerId = generateUniqueId();
     const joined = await joinGame(id, playerId);
@@ -322,7 +323,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       console.error('Failed to join game');
     }
   };
-  
+
   const handlePlayerJoin = async () => {
     if (newPlayerName.trim() && gameId) {
       const playerId = generateUniqueId();
@@ -348,17 +349,17 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
         gameEnded
       };
       await updateGameState(gameId, updatedGameState);
-  
+
       setShowJoinPopup(false);
       setNewPlayerName('');
       logEvent(`${newPlayer.name} joined the game`);
     }
   };
-  
+
   const handleOpponentPress = (opponent: Player) => {
     setSelectedOpponent(opponent);
-  };  
-  
+  };
+
   const handleBack = async () => {
     setScreen('welcome');
     setIsMultiplayer(false);
@@ -393,7 +394,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       console.error('Failed to reset presets', error);
     }
   };
-  
+
   const processEventQueue = useCallback(() => {
     if (eventQueueRef.current.length > 0) {
       const event = eventQueueRef.current.shift();
@@ -405,7 +406,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       }
       setTimeout(processEventQueue, 0);
     }
-  }, []);  
+  }, []);
 
   const logEvent = useCallback((event: string) => {
     if (event === undefined) {
@@ -420,7 +421,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       return newHistory;
     });
   }, []);
-  
+
   const handleGameStart = (newGameId: string | null, host: boolean) => {
     if (newGameId) {
       setGameId(newGameId);
@@ -437,19 +438,19 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
 
   const savePreset = async () => {
     if (presetName.trim() === '') return;
-    
+
     const newPreset: Preset = {
       id: Date.now().toString(),
       name: presetName,
-      players: players.map(p => ({ 
-        ...p, 
-        life: 40, 
-        commanderDamage: 0, 
-        poisonCounters: 0, 
+      players: players.map(p => ({
+        ...p,
+        life: 40,
+        commanderDamage: 0,
+        poisonCounters: 0,
         isDead: false,
         stats: p.stats || getDefaultStats()
       })),
-      gameState: null 
+      gameState: null
     };
     const updatedPresets = [...presets, newPreset];
     setPresets(updatedPresets);
@@ -461,7 +462,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       console.error('Failed to save preset', error);
     }
   };
-  
+
   const editPreset = (presetId: string) => {
     const preset = presets.find(p => p.id === presetId);
     if (preset) {
@@ -470,7 +471,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       setShowSavePresetModal(true);
     }
   };
-  
+
   const deletePreset = async (presetId: string) => {
     const updatedPresets = presets.filter(p => p.id !== presetId);
     setPresets(updatedPresets);
@@ -479,7 +480,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     } catch (error) {
       console.error('Failed to delete preset', error);
     }
-  };  
+  };
 
   const loadPreset = (preset: Preset) => {
     if (preset.gameState) {
@@ -487,11 +488,11 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       setGameHistory(preset.gameState.gameHistory);
       setGameEnded(preset.gameState.gameEnded);
     } else {
-      setPlayers(preset.players.map(p => ({ 
-        ...p, 
-        life: 40, 
-        commanderDamage: 0, 
-        poisonCounters: 0, 
+      setPlayers(preset.players.map(p => ({
+        ...p,
+        life: 40,
+        commanderDamage: 0,
+        poisonCounters: 0,
         isDead: false,
         stats: p.stats || getDefaultStats()
       })));
@@ -501,7 +502,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setCurrentPreset(preset);
     setShowPresetModal(false);
   };
-  
+
   const getDefaultStats = () => ({
     gamesPlayed: 0,
     wins: 0,
@@ -511,7 +512,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     totalCommanderDamageReceived: 0,
     totalPoisonCountersGiven: 0,
     totalPoisonCountersReceived: 0,
-  });  
+  });
 
   const saveCurrentGameState = async () => {
     if (currentPreset) {
@@ -555,13 +556,13 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       }
     }
   };
-  
+
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-  
+
   const eventQueueRef = useRef<string[]>([]);
 
   const logBufferedChanges = () => {
@@ -588,8 +589,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       }
     });
     setChangeBuffer({});
-  };  
-  
+  };
+
   const bufferChange = (playerId: number | string, changeType: string, amount: number) => {
     setChangeBuffer(prev => {
       const playerBuffer = prev[playerId] || {};
@@ -604,116 +605,116 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   };
 
   const handleLifeChange = (playerId: string, amount: number) => {
-  setPlayers(prevPlayers => {
-    const newPlayers = prevPlayers.map(p => {
-      if (p.id === playerId) {
-        const newLife = Math.max(0, p.life + amount);
-        const isDead = newLife <= 0;
-        if (isDead && !p.isDead) {
-          logEvent(`${p.name} has been eliminated!`);
+    setPlayers(prevPlayers => {
+      const newPlayers = prevPlayers.map(p => {
+        if (p.id === playerId) {
+          const newLife = Math.max(0, p.life + amount);
+          const isDead = newLife <= 0;
+          if (isDead && !p.isDead) {
+            logEvent(`${p.name} has been eliminated!`);
+          }
+          return { ...p, life: newLife, isDead };
         }
-        return { ...p, life: newLife, isDead };
-      }
-      return p;
-    });
+        return p;
+      });
 
-    const updatedPlayer = newPlayers.find(p => p.id === playerId);
-    if (updatedPlayer) {
-      const event = `${updatedPlayer.name} ${amount > 0 ? 'gained' : 'lost'} ${Math.abs(amount)} life. New total: ${updatedPlayer.life}`;
-      logEvent(event);
+      const updatedPlayer = newPlayers.find(p => p.id === playerId);
+      if (updatedPlayer) {
+        const event = `${updatedPlayer.name} ${amount > 0 ? 'gained' : 'lost'} ${Math.abs(amount)} life. New total: ${updatedPlayer.life}`;
+        logEvent(event);
 
-      if (isMultiplayer && gameId) {
-        updateGameState(gameId, {
-          players: newPlayers,
-          gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
-          gameEnded
-        });
-      }
-    }
-
-    if (currentPlayer && currentPlayer.id === playerId) {
-      setCurrentPlayer(updatedPlayer || currentPlayer);
-    }
-
-    checkGameEnd(newPlayers);
-    return newPlayers;
-  });
-};
-
-const handleCommanderDamageChange = (playerId: string, amount: number) => {
-  setPlayers(prevPlayers => {
-    const newPlayers = prevPlayers.map(p => {
-      if (p.id === playerId) {
-        const newCommanderDamage = Math.max(0, p.commanderDamage + amount);
-        const newLife = Math.max(0, p.life - amount);
-        const isDead = newLife <= 0 || newCommanderDamage >= 21;
-        if (isDead && !p.isDead) {
-          logEvent(`${p.name} has been eliminated by commander damage!`);
+        if (isMultiplayer && gameId) {
+          updateGameState(gameId, {
+            players: newPlayers,
+            gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
+            gameEnded
+          });
         }
-        return { ...p, commanderDamage: newCommanderDamage, life: newLife, isDead };
       }
-      return p;
+
+      if (currentPlayer && currentPlayer.id === playerId) {
+        setCurrentPlayer(updatedPlayer || currentPlayer);
+      }
+
+      checkGameEnd(newPlayers);
+      return newPlayers;
     });
+  };
 
-    const updatedPlayer = newPlayers.find(p => p.id === playerId);
-    if (updatedPlayer) {
-      const event = `${updatedPlayer.name} received ${amount} commander damage. New total: ${updatedPlayer.commanderDamage}`;
-      logEvent(event);
-
-      if (isMultiplayer && gameId) {
-        updateGameState(gameId, {
-          players: newPlayers,
-          gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
-          gameEnded
-        });
-      }
-    }
-
-    if (currentPlayer && currentPlayer.id === playerId) {
-      setCurrentPlayer(updatedPlayer || currentPlayer);
-    }
-
-    checkGameEnd(newPlayers);
-    return newPlayers;
-  });
-};
-
-const handlePoisonCountersChange = (playerId: string, amount: number) => {
-  setPlayers(prevPlayers => {
-    const newPlayers = prevPlayers.map(p => {
-      if (p.id === playerId) {
-        const newPoisonCounters = Math.max(0, p.poisonCounters + amount);
-        const isDead = newPoisonCounters >= 10;
-        if (isDead && !p.isDead) {
-          logEvent(`${p.name} has been eliminated by poison!`);
+  const handleCommanderDamageChange = (playerId: string, amount: number) => {
+    setPlayers(prevPlayers => {
+      const newPlayers = prevPlayers.map(p => {
+        if (p.id === playerId) {
+          const newCommanderDamage = Math.max(0, p.commanderDamage + amount);
+          const newLife = Math.max(0, p.life - amount);
+          const isDead = newLife <= 0 || newCommanderDamage >= 21;
+          if (isDead && !p.isDead) {
+            logEvent(`${p.name} has been eliminated by commander damage!`);
+          }
+          return { ...p, commanderDamage: newCommanderDamage, life: newLife, isDead };
         }
-        return { ...p, poisonCounters: newPoisonCounters, isDead };
+        return p;
+      });
+
+      const updatedPlayer = newPlayers.find(p => p.id === playerId);
+      if (updatedPlayer) {
+        const event = `${updatedPlayer.name} received ${amount} commander damage. New total: ${updatedPlayer.commanderDamage}`;
+        logEvent(event);
+
+        if (isMultiplayer && gameId) {
+          updateGameState(gameId, {
+            players: newPlayers,
+            gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
+            gameEnded
+          });
+        }
       }
-      return p;
+
+      if (currentPlayer && currentPlayer.id === playerId) {
+        setCurrentPlayer(updatedPlayer || currentPlayer);
+      }
+
+      checkGameEnd(newPlayers);
+      return newPlayers;
     });
+  };
 
-    const updatedPlayer = newPlayers.find(p => p.id === playerId);
-    if (updatedPlayer) {
-      const event = `${updatedPlayer.name} ${amount > 0 ? 'received' : 'removed'} ${Math.abs(amount)} poison counter${Math.abs(amount) !== 1 ? 's' : ''}. New total: ${updatedPlayer.poisonCounters}`;
-      logEvent(event);
+  const handlePoisonCountersChange = (playerId: string, amount: number) => {
+    setPlayers(prevPlayers => {
+      const newPlayers = prevPlayers.map(p => {
+        if (p.id === playerId) {
+          const newPoisonCounters = Math.max(0, p.poisonCounters + amount);
+          const isDead = newPoisonCounters >= 10;
+          if (isDead && !p.isDead) {
+            logEvent(`${p.name} has been eliminated by poison!`);
+          }
+          return { ...p, poisonCounters: newPoisonCounters, isDead };
+        }
+        return p;
+      });
 
-      if (isMultiplayer && gameId) {
-        updateGameState(gameId, {
-          players: newPlayers,
-          gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
-          gameEnded
-        });
+      const updatedPlayer = newPlayers.find(p => p.id === playerId);
+      if (updatedPlayer) {
+        const event = `${updatedPlayer.name} ${amount > 0 ? 'received' : 'removed'} ${Math.abs(amount)} poison counter${Math.abs(amount) !== 1 ? 's' : ''}. New total: ${updatedPlayer.poisonCounters}`;
+        logEvent(event);
+
+        if (isMultiplayer && gameId) {
+          updateGameState(gameId, {
+            players: newPlayers,
+            gameHistory: [...gameHistoryRef.current, `[${new Date().toLocaleTimeString()}] ${event}`],
+            gameEnded
+          });
+        }
       }
-    }
 
-    if (currentPlayer && currentPlayer.id === playerId) {
-      setCurrentPlayer(updatedPlayer || currentPlayer);
-    }
+      if (currentPlayer && currentPlayer.id === playerId) {
+        setCurrentPlayer(updatedPlayer || currentPlayer);
+      }
 
-    checkGameEnd(newPlayers);
-    return newPlayers;
-  });
-};
+      checkGameEnd(newPlayers);
+      return newPlayers;
+    });
+  };
 
   const getPlayerContainerStyle = (totalPlayers: number, index: number) => {
     if (totalPlayers === 1) return 'w-full aspect-[3/4]';
@@ -721,7 +722,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
     if (totalPlayers === 3) return index === 2 ? 'w-full aspect-[3/4]' : 'w-1/2 aspect-[3/4]';
     return 'w-1/2 aspect-[3/4]';
   };
-  
+
   const addPlayer = () => {
     if (players.length < 4) {
       const manaColors = ['white', 'blue', 'black', 'red', 'green'];
@@ -744,8 +745,8 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       setRoomCode(gameId);
     }
     syncGameState();
-  };  
-  
+  };
+
   const removePlayer = (playerId: number | string) => {
     const player = players.find(p => p.id === playerId);
     if (player) {
@@ -760,7 +761,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
     blinkMiniTimer();
     if (timerInterval) clearInterval(timerInterval);
     setIsTimerActive(false);
-  };  
+  };
 
   const blinkMiniTimer = () => {
     Animated.sequence([
@@ -773,7 +774,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
 
   const runTimer = () => {
     if (timerInterval) clearInterval(timerInterval);
-    
+
     const interval = setInterval(() => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
@@ -785,37 +786,37 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
         return prevTime - 1;
       });
     }, 1000);
-  
+
     setTimerInterval(interval);
-  }; 
-  
+  };
+
   const handleDiceRoll = (result: number) => {
     logEvent(`Dice roll result: ${result}`);
   };
 
   const resetGame = async () => {
-    const resetPlayers = players.map(player => ({ 
-      ...player, 
-      life: 40, 
-      commanderDamage: 0, 
-      poisonCounters: 0, 
+    const resetPlayers = players.map(player => ({
+      ...player,
+      life: 40,
+      commanderDamage: 0,
+      poisonCounters: 0,
       isDead: false,
       hasCrown: false
     }));
-  
+
     const newGameHistory = ["Game has been reset. New game starting!"];
-  
+
     setPlayers(resetPlayers);
     setGameEnded(false);
     setGameHistory(newGameHistory);
-  
+
     if (currentPlayer) {
       const updatedCurrentPlayer = resetPlayers.find(p => p.id === currentPlayer.id);
       if (updatedCurrentPlayer) {
         setCurrentPlayer(updatedCurrentPlayer);
       }
     }
-  
+
     if (isMultiplayer && gameId) {
       await updateGameState(gameId, {
         players: resetPlayers,
@@ -823,7 +824,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
         gameEnded: false
       });
     }
-  
+
     if (currentPreset) {
       const updatedPreset = {
         ...currentPreset,
@@ -840,7 +841,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       }
     }
   };
-  
+
   const updatePlayer = (updatedPlayer: Player) => {
     setPlayers(prevPlayers => {
       const newPlayers = prevPlayers.map(p => p.id === updatedPlayer.id ? updatedPlayer : p);
@@ -853,17 +854,17 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       }
       return newPlayers;
     });
-  
+
     if (currentPlayer && currentPlayer.id === updatedPlayer.id) {
       setCurrentPlayer(updatedPlayer);
     }
-  
+
     logEvent(`${updatedPlayer.name}'s information has been updated.`);
   };
-  
+
   const handleGameEnd = useCallback(async (winnerId: string) => {
     if (gameEnded) return;
-    
+
     const winner = players.find(p => p.id === winnerId);
     if (winner) {
       console.log('Handling game end. Winner:', winner.name);
@@ -889,23 +890,23 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       });
       logEvent(winEvent);
       const updatedGameHistory = [...gameHistory, `[${new Date().toLocaleTimeString()}] ${winEvent}`];
-  
+
       const newGameState = {
         players: updatedPlayers,
         gameHistory: updatedGameHistory,
         gameEnded: true
       };
-  
+
       // Update local state
       setPlayers(updatedPlayers);
       setGameHistory(updatedGameHistory);
       setGameEnded(true);
-  
+
       // Update Firebase state
       if (isMultiplayer && gameId) {
         await updateGameState(gameId, newGameState);
       }
-  
+
       if (currentPreset) {
         const updatedPreset = {
           ...currentPreset,
@@ -927,16 +928,16 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       } catch (error) {
         console.error('Failed to save game state', error);
       }
-  
+
       logEvent(winEvent);
     }
     syncGameState();
   }, [players, gameEnded, currentPreset, presets, gameHistory, isMultiplayer, gameId, logEvent, getDefaultStats]);
-  
+
   const updatePlayersAndCheckEnd = useCallback(() => {
     setPlayers(prevPlayers => {
-      const alivePlayers = prevPlayers.filter(p => !p.isDead);-
-      console.log('Checking game end. Alive players:', alivePlayers.length);
+      const alivePlayers = prevPlayers.filter(p => !p.isDead); -
+        console.log('Checking game end. Alive players:', alivePlayers.length);
       if (prevPlayers.length > 1 && alivePlayers.length === 1 && !gameEnded) {
         console.log('Game should end. Winner:', alivePlayers[0].name);
         handleGameEnd(alivePlayers[0].id);
@@ -944,290 +945,290 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       return prevPlayers;
     });
   }, [gameEnded, handleGameEnd]);
-  
-  
+
+
   const checkGameEnd = useCallback((currentPlayers: Player[]) => {
     if (gameEnded) return;
-  
+
     const alivePlayers = currentPlayers.filter(p => !p.isDead);
     console.log('Checking game end. Alive players:', alivePlayers.length);
-    
+
     if (currentPlayers.length > 1 && alivePlayers.length === 1) {
       console.log('Game should end. Winner:', alivePlayers[0].name);
       handleGameEnd(alivePlayers[0].id);
     }
   }, [gameEnded, handleGameEnd]);
-  
+
+  const actionItems: Array<{
+    icon: IoniconsName;
+    color: string;
+    onPress: () => void;
+    disabled?: boolean;
+  }> = [
+      { icon: 'person-add', color: 'blue-400', onPress: addPlayer, disabled: gameEnded || players.length >= 4 },
+      { icon: 'refresh', color: 'red-400', onPress: resetGame },
+      { icon: 'clipboard', color: 'yellow-400', onPress: () => setShowPresetModal(true) },
+      { icon: 'list', color: 'orange-400', onPress: () => setShowHistory(true) },
+      { icon: 'save-outline', color: 'green-400', onPress: saveCurrentGameState },
+      { icon: 'search', color: 'purple-400', onPress: () => setShowCardSearch(true) },
+      { icon: 'dice', color: 'pink-400', onPress: () => setShowDiceRoller(true) },
+      { icon: 'timer', color: 'indigo-400', onPress: () => setShowGameTimer(true) },
+    ];
+
+
   return (
-    <View style={tw`flex-1 bg-gray-100 pt-12`}>
+    <View style={tw`flex-1 bg-gray-900 pt-12`}>
       {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'welcome' && (
-      <WelcomeScreen 
-        onStartLocalGame={handleStartLocalGame}
-        onHostSession={handleHostSession}
-      />
-    )}
-    {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'multiplayerSetup' && (
-      <>
-      <Pressable
-        onPress={handleBack}
-      ><Ionicons style={tw `ml-8`} name="arrow-back-circle-sharp" size={38} color="gray" /></Pressable>
-      <MultiplayerSetup 
-        onCreateGame={handleCreateGame}
-        onJoinGame={handleJoinGame}
-        onBack={handleBack}
-      />
-      </>
-    )}
-    {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'game' && (
-      <>
-      <Pressable
-        onPress={handleBack}
-      ><Ionicons style={tw `ml-8`} name="arrow-back-circle-sharp" size={38} color="gray" /></Pressable>
-      {roomCode && <RoomCodeDisplay roomCode={roomCode} />}
-      {showMiniTimer && (
-        <Animated.View style={[tw`absolute top-4 right-4 bg-gray-800 p-2 rounded`, { opacity: miniTimerOpacity }]}>
-          <Text style={tw`text-white font-bold`}>{formatTime(timeLeft)}</Text>
-        </Animated.View>
+        <WelcomeScreen
+          onStartLocalGame={handleStartLocalGame}
+          onHostSession={handleHostSession}
+        />
       )}
-       {isMultiplayer && currentPlayer ? (
-              <View key={currentPlayer.id} style={tw`w-full aspect-[3/4]`}>
-                <PlayerComponent
-                  player={currentPlayer}
-                  onLifeChange={(amount) => handleLifeChange(currentPlayer.id, amount)}
-                  onCommanderDamageChange={(amount) => handleCommanderDamageChange(currentPlayer.id, amount)}
-                  onPoisonCountersChange={(amount) => handlePoisonCountersChange(currentPlayer.id, amount)}
-                  onSettingsPress={() => setShowSettings(currentPlayer.id)}
-                  onRemove={() => removePlayer(currentPlayer.id)}
-                  disabled={gameEnded || currentPlayer.isDead}
-                />
-              
+      {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'multiplayerSetup' && (
+        <MultiplayerSetup
+          onCreateGame={handleCreateGame}
+          onJoinGame={handleJoinGame}
+          onBack={handleBack}
+        />
+      )}
+      {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'game' && (
+        <>
+          <Pressable onPress={handleBack} style={tw`ml-6 mb-4`}>
+            <Ionicons name="arrow-back-circle-sharp" size={38} color="#60A5FA" />
+          </Pressable>
+          {roomCode && <RoomCodeDisplay roomCode={roomCode} />}
+          {showMiniTimer && (
+            <Animated.View style={[tw`absolute top-4 right-4 bg-gray-800 p-2 rounded-lg`, { opacity: miniTimerOpacity }]}>
+              <Text style={tw`text-white font-bold`}>{formatTime(timeLeft)}</Text>
+            </Animated.View>
+          )}
+          {isMultiplayer && currentPlayer ? (
+            <View key={currentPlayer.id} style={tw`w-full aspect-[3/4]`}>
+              <PlayerComponent
+                player={currentPlayer}
+                onLifeChange={(amount) => handleLifeChange(currentPlayer.id, amount)}
+                onCommanderDamageChange={(amount) => handleCommanderDamageChange(currentPlayer.id, amount)}
+                onPoisonCountersChange={(amount) => handlePoisonCountersChange(currentPlayer.id, amount)}
+                onSettingsPress={() => setShowSettings(currentPlayer.id)}
+                onRemove={() => removePlayer(currentPlayer.id)}
+                disabled={gameEnded || currentPlayer.isDead}
+              />
               <OpponentsSection
                 opponents={players.filter(p => p.id !== currentPlayer.id)}
                 onOpponentPress={handleOpponentPress}
               />
             </View>
-            
-        ) : (
-      <View style={tw`flex-1 flex-row flex-wrap justify-center items-stretch p-2`}>
-        {players.map((player, index) => (
-          <View key={player.id} style={tw`${getPlayerContainerStyle(players.length, index)}`}>
-            <PlayerComponent
-              player={player}
-              onLifeChange={(amount) => {
-                handleLifeChange(player.id, amount);
-                updatePlayersAndCheckEnd();
-              }}
-              onCommanderDamageChange={(amount) => {
-                handleCommanderDamageChange(player.id, amount);
-                updatePlayersAndCheckEnd();
-              }}
-              onPoisonCountersChange={(amount) => {
-                handlePoisonCountersChange(player.id, amount);
-                updatePlayersAndCheckEnd();
-              }}
-              onSettingsPress={() => setShowSettings(player.id)}
-              onRemove={() => removePlayer(player.id)}
-              disabled={gameEnded || player.isDead}
-            />
+          ) : (
+            <View style={tw`flex-1 flex-row flex-wrap justify-center items-stretch p-2`}>
+              {players.map((player, index) => (
+                <View key={player.id} style={tw`${getPlayerContainerStyle(players.length, index)}`}>
+                  <PlayerComponent
+                    player={player}
+                    onLifeChange={(amount) => {
+                      handleLifeChange(player.id, amount);
+                      updatePlayersAndCheckEnd();
+                    }}
+                    onCommanderDamageChange={(amount) => {
+                      handleCommanderDamageChange(player.id, amount);
+                      updatePlayersAndCheckEnd();
+                    }}
+                    onPoisonCountersChange={(amount) => {
+                      handlePoisonCountersChange(player.id, amount);
+                      updatePlayersAndCheckEnd();
+                    }}
+                    onSettingsPress={() => setShowSettings(player.id)}
+                    onRemove={() => removePlayer(player.id)}
+                    disabled={gameEnded || player.isDead}
+                  />
+                </View>
+              ))}
+            </View>
+          )}
+          <View style={tw`flex-row justify-center p-4 bg-gray-800 rounded-t-2xl`}>
+            {actionItems.map((item, index) => (
+              <Pressable
+                key={index}
+                style={({ pressed }) => tw`mx-2 p-2 ${pressed ? 'bg-gray-700' : 'bg-gray-800'} rounded-full`}
+                onPress={item.onPress}
+                disabled={item.disabled}
+              >
+                <Ionicons
+                  name={item.icon}
+                  size={24}
+                  color={item.disabled ? '#4B5563' : tw.color(item.color)}
+                />
+              </Pressable>
+            ))}
           </View>
-        ))}
-      </View>
-    )}
-      <View style={tw`flex-row justify-center p-4`}>
-        <Pressable style={tw`mx-2`} onPress={addPlayer} disabled={gameEnded || players.length >= 4}>
-          <Ionicons name="person-add" size={24} color={gameEnded || players.length >= 4 ? "gray" : "blue"} />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={resetGame}>
-          <Ionicons name="refresh" size={24} color="red" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={() => setShowPresetModal(true)}>
-          <Ionicons name="clipboard" size={24} color="brown" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={() => setShowHistory(true)}>
-          <Ionicons name="list" size={24} color="orange" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={saveCurrentGameState}>
-          <Ionicons name="save-outline" size={24} color="green" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={() => setShowCardSearch(true)}>
-          <Ionicons name="search" size={24} color="gray" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={() => setShowDiceRoller(true)}>
-          <Ionicons name="dice" size={24} color="blue" />
-        </Pressable>
-        <Pressable style={tw`mx-2`} onPress={() => setShowGameTimer(true)}>
-          <Ionicons name="timer" size={24} color="purple" />
-        </Pressable>
-      </View>
 
-      <PlayerSettings
-        visible={showSettings !== null}
-        player={players.find(p => p.id === showSettings) || null}
-        onUpdate={(updatedPlayer) => {
-          if (updatedPlayer) {
-            updatePlayer(updatedPlayer);
-          }
-          setShowSettings(null);
-        }}
-        onClose={() => setShowSettings(null)}
-      />
+          <PlayerSettings
+            visible={showSettings !== null}
+            player={players.find(p => p.id === showSettings) || null}
+            onUpdate={(updatedPlayer) => {
+              if (updatedPlayer) {
+                updatePlayer(updatedPlayer);
+              }
+              setShowSettings(null);
+            }}
+            onClose={() => setShowSettings(null)}
+          />
 
-      {/* Preset Modal */}
-      <Modal visible={showPresetModal} animationType="slide" transparent={true}>
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-            <Text style={tw`text-lg font-bold mb-2`}>Presets</Text>
-            {presets.map(preset => (
-              <View key={preset.id} style={tw`flex-row items-center justify-between mb-2`}>
+          {/* Preset Modal */}
+          <Modal visible={showPresetModal} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <Text style={tw`text-lg font-bold mb-2`}>Presets</Text>
+                {presets.map(preset => (
+                  <View key={preset.id} style={tw`flex-row items-center justify-between mb-2`}>
+                    <Pressable
+                      style={tw`flex-1 bg-blue-100 p-2 rounded mr-2`}
+                      onPress={() => loadPreset(preset)}
+                    >
+                      <Text>{preset.name}</Text>
+                    </Pressable>
+                    <Pressable onPress={() => editPreset(preset.id)}>
+                      <Ionicons name="pencil" size={24} color="blue" />
+                    </Pressable>
+                    <Pressable onPress={() => deletePreset(preset.id)}>
+                      <Ionicons name="trash" size={24} color="red" />
+                    </Pressable>
+                  </View>
+                ))}
                 <Pressable
-                  style={tw`flex-1 bg-blue-100 p-2 rounded mr-2`}
-                  onPress={() => loadPreset(preset)}
+                  style={tw`bg-green-500 p-2 rounded mt-2`}
+                  onPress={() => setShowSavePresetModal(true)}
                 >
-                  <Text>{preset.name}</Text>
+                  <Text style={tw`text-white text-center`}>Save Current as Preset</Text>
                 </Pressable>
-                <Pressable onPress={() => editPreset(preset.id)}>
-                  <Ionicons name="pencil" size={24} color="blue" />
-                </Pressable>
-                <Pressable onPress={() => deletePreset(preset.id)}>
-                  <Ionicons name="trash" size={24} color="red" />
+                <Pressable
+                  style={tw`bg-red-500 p-2 rounded mt-2`}
+                  onPress={() => setShowPresetModal(false)}
+                >
+                  <Text style={tw`text-white text-center`}>Close</Text>
                 </Pressable>
               </View>
-            ))}
-            <Pressable
-              style={tw`bg-green-500 p-2 rounded mt-2`}
-              onPress={() => setShowSavePresetModal(true)}
-            >
-              <Text style={tw`text-white text-center`}>Save Current as Preset</Text>
-            </Pressable>
-            <Pressable
-              style={tw`bg-red-500 p-2 rounded mt-2`}
-              onPress={() => setShowPresetModal(false)}
-            >
-              <Text style={tw`text-white text-center`}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+            </View>
+          </Modal>
 
-      {/* Save Preset Modal */}
-      <Modal visible={showSavePresetModal} animationType="slide" transparent={true}>
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-            <TextInput
-              style={tw`border border-gray-300 rounded p-2 mb-4`}
-              value={presetName}
-              onChangeText={setPresetName}
-              placeholder="Enter preset name"
-            />
-            <Pressable onPress={savePreset} style={tw`bg-blue-500 p-2 rounded mb-2`}>
-              <Text style={tw`text-white text-center font-bold`}>Save Preset</Text>
-            </Pressable>
-            <Pressable onPress={() => setShowSavePresetModal(false)} style={tw`bg-red-500 p-2 rounded`}>
-              <Text style={tw`text-white text-center font-bold`}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+          {/* Save Preset Modal */}
+          <Modal visible={showSavePresetModal} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <TextInput
+                  style={tw`border border-gray-300 rounded p-2 mb-4`}
+                  value={presetName}
+                  onChangeText={setPresetName}
+                  placeholder="Enter preset name"
+                />
+                <Pressable onPress={savePreset} style={tw`bg-blue-500 p-2 rounded mb-2`}>
+                  <Text style={tw`text-white text-center font-bold`}>Save Preset</Text>
+                </Pressable>
+                <Pressable onPress={() => setShowSavePresetModal(false)} style={tw`bg-red-500 p-2 rounded`}>
+                  <Text style={tw`text-white text-center font-bold`}>Cancel</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
-      <Modal visible={showDiceRoller} animationType="slide" transparent={true}>
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-            <DiceRoller onRoll={handleDiceRoll} />
-            <Pressable
-              style={tw`bg-red-500 p-2 rounded mt-4`}
-              onPress={() => setShowDiceRoller(false)}
-            >
-              <Text style={tw`text-white text-center font-bold`}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+          <Modal visible={showDiceRoller} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <DiceRoller onRoll={handleDiceRoll} />
+                <Pressable
+                  style={tw`bg-red-500 p-2 rounded mt-4`}
+                  onPress={() => setShowDiceRoller(false)}
+                >
+                  <Text style={tw`text-white text-center font-bold`}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
-      {/* Game Timer Modal */}
-      <Modal visible={showGameTimer} animationType="slide" transparent={true}>
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-            <GameTimer 
-              onTimeUp={handleTimeUp}
-              duration={timerDuration}
-              timeLeft={timeLeft}
-              isActive={isTimerActive}
-              onDurationChange={(newDuration) => {
-                setTimerDuration(newDuration);
-                setTimeLeft(newDuration);
-                setShowMiniTimer(true);
-              }}
-              onActiveChange={(active) => {
-                setIsTimerActive(active);
-                setShowMiniTimer(true);
-              }}
-            />
-            <Pressable
-              style={tw`bg-red-500 p-2 rounded mt-4`}
-              onPress={() => {
-                setShowGameTimer(false);
-                setShowMiniTimer(true);
-              }}
-            >
-              <Text style={tw`text-white text-center font-bold`}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+          {/* Game Timer Modal */}
+          <Modal visible={showGameTimer} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <GameTimer
+                  onTimeUp={handleTimeUp}
+                  duration={timerDuration}
+                  timeLeft={timeLeft}
+                  isActive={isTimerActive}
+                  onDurationChange={(newDuration) => {
+                    setTimerDuration(newDuration);
+                    setTimeLeft(newDuration);
+                    setShowMiniTimer(true);
+                  }}
+                  onActiveChange={(active) => {
+                    setIsTimerActive(active);
+                    setShowMiniTimer(true);
+                  }}
+                />
+                <Pressable
+                  style={tw`bg-red-500 p-2 rounded mt-4`}
+                  onPress={() => {
+                    setShowGameTimer(false);
+                    setShowMiniTimer(true);
+                  }}
+                >
+                  <Text style={tw`text-white text-center font-bold`}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
-      <Modal visible={showJoinPopup} animationType="slide" transparent={true}>
-  <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-    <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-      <Text style={tw`text-lg font-bold mb-2`}>Enter Your Name</Text>
-      <TextInput
-        style={tw`border border-gray-300 rounded p-2 mb-4`}
-        value={newPlayerName}
-        onChangeText={setNewPlayerName}
-        placeholder="Your Name"
-      />
-      <Pressable 
-        onPress={handlePlayerJoin} 
-        style={tw`bg-blue-500 p-2 rounded`}
-      >
-        <Text style={tw`text-white text-center font-bold`}>Join Game</Text>
-      </Pressable>
-    </View>
-  </View>
-</Modal>
+          <Modal visible={showJoinPopup} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <Text style={tw`text-lg font-bold mb-2`}>Enter Your Name</Text>
+                <TextInput
+                  style={tw`border border-gray-300 rounded p-2 mb-4`}
+                  value={newPlayerName}
+                  onChangeText={setNewPlayerName}
+                  placeholder="Your Name"
+                />
+                <Pressable
+                  onPress={handlePlayerJoin}
+                  style={tw`bg-blue-500 p-2 rounded`}
+                >
+                  <Text style={tw`text-white text-center font-bold`}>Join Game</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
 
-      <Modal visible={!!selectedOpponent} animationType="slide" transparent={true}>
-        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
-          <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-            {selectedOpponent && (
-              <PlayerComponent
-                player={players.find(p => p.id === selectedOpponent.id) || selectedOpponent}
-                isSmall={false}
-                disabled={true}
-              />
-            )}
-            <Pressable
-              style={tw`bg-blue-500 p-2 rounded mt-4`}
-              onPress={() => setSelectedOpponent(null)}
-            >
-              <Text style={tw`text-white text-center font-bold`}>Close</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+          <Modal visible={!!selectedOpponent} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                {selectedOpponent && (
+                  <PlayerComponent
+                    player={players.find(p => p.id === selectedOpponent.id) || selectedOpponent}
+                    isSmall={false}
+                    disabled={true}
+                  />
+                )}
+                <Pressable
+                  style={tw`bg-blue-500 p-2 rounded mt-4`}
+                  onPress={() => setSelectedOpponent(null)}
+                >
+                  <Text style={tw`text-white text-center font-bold`}>Close</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
 
-      <GameHistory 
-        visible={showHistory} 
-        history={gameHistory} 
-        onClose={() => setShowHistory(false)} 
-      />
+          <GameHistory
+            visible={showHistory}
+            history={gameHistory}
+            onClose={() => setShowHistory(false)}
+          />
 
-      <CardSearch 
-        visible={showCardSearch}
-        onClose={() => setShowCardSearch(false)}
-      />
-      </>
-    )}
+          <CardSearch
+            visible={showCardSearch}
+            onClose={() => setShowCardSearch(false)}
+          />
+        </>
+      )}
     </View>
   );
 }

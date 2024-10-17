@@ -34,26 +34,39 @@ const DiceRoller: React.FC<DiceRollerProps> = ({ onRoll }) => {
     return diceUnicode[`d${sides}`][result];
   };
 
+  const getDiceColor = (sides: number) => {
+    const colors = {
+      2: 'bg-red-600',
+      4: 'bg-blue-600',
+      6: 'bg-green-600',
+      8: 'bg-yellow-600',
+      10: 'bg-purple-600',
+      12: 'bg-pink-600',
+      20: 'bg-indigo-600',
+    };
+    return colors[sides as keyof typeof colors] || 'bg-gray-600';
+  };
+
   return (
-    <View style={tw`bg-gray-100 p-4 rounded-lg`}>
-      <Text style={tw`text-xl font-bold text-center mb-4`}>Dice Roller</Text>
-      <View style={tw`flex-row flex-wrap justify-center mb-4`}>
+    <View style={tw`bg-gray-800 p-6 rounded-lg`}>
+      <Text style={tw`text-2xl font-bold text-center mb-6 text-blue-400`}>Dice Roller</Text>
+      <View style={tw`flex-row flex-wrap justify-center mb-6`}>
         {diceTypes.map((sides) => (
           <Pressable
             key={sides}
-            style={tw`m-2 p-2 bg-blue-500 rounded`}
+            style={({ pressed }) => tw`m-2 p-3 ${pressed ? getDiceColor(sides).replace('600', '700') : getDiceColor(sides)} rounded-lg`}
             onPress={() => rollDice(sides)}
           >
-            <Text style={tw`text-white font-bold`}>d{sides}</Text>
+            <Text style={tw`text-white font-bold text-lg`}>d{sides}</Text>
           </Pressable>
         ))}
       </View>
       {result !== null && selectedDice !== null && (
-        <View style={tw`items-center`}>
-          <Text style={[tw`text-5xl mb-2`, { fontFamily: 'dicefont' }]}>
+        <View style={tw`items-center bg-gray-700 p-4 rounded-lg`}>
+          <Text style={[tw`text-7xl mb-4 text-white`, { fontFamily: 'dicefont' }]}>
             {getDiceIcon(selectedDice, result)}
           </Text>
-          <Text style={tw`text-2xl font-bold`}>Result: {result}</Text>
+          <Text style={tw`text-3xl font-bold text-white`}>Result: {result}</Text>
         </View>
       )}
     </View>

@@ -77,35 +77,38 @@ const CardArtSelector: React.FC<CardArtSelectorProps> = ({ onSelectArt }) => {
     >
       <Image
         source={{ uri: item.image_uris?.art_crop || 'default_image_url' }}
-        style={tw`w-20 h-20 rounded`}
+        style={tw`w-24 h-24 rounded-lg`}
       />
-      <Text style={tw`text-xs mt-1 text-center`}>{item.name}</Text>
+      <Text style={tw`text-xs mt-2 text-center text-gray-300`}>{item.name}</Text>
     </Pressable>
   );
 
   return (
-    <View style={tw`flex-1 p-4`}>
-      <View style={tw`flex-row mb-4`}>
+    <View style={tw`flex-1 bg-gray-900 p-4`}>
+      <Text style={tw`text-2xl font-bold mb-4 text-blue-400`}>Card Art Selector</Text>
+      <View style={tw`flex-row mb-6`}>
         <TextInput
-          style={tw`flex-1 border border-gray-300 rounded-l p-2`}
+          style={tw`flex-1 bg-gray-800 text-white border border-gray-700 rounded-l-lg p-3`}
           value={searchTerm}
           onChangeText={setSearchTerm}
           placeholder="Search for a card"
+          placeholderTextColor="#9CA3AF"
         />
         <Pressable
-          style={tw`bg-blue-500 px-4 justify-center rounded-r`}
+          style={({ pressed }) => tw`${pressed ? 'bg-blue-700' : 'bg-blue-600'} px-6 justify-center rounded-r-lg`}
           onPress={handleSubmit}
         >
-          <Text style={tw`text-white font-bold`}>Search</Text>
+          <Text style={tw`text-white font-semibold`}>Search</Text>
         </Pressable>
       </View>
-      {loading && <ActivityIndicator size="large" color="#0000ff" />}
-      {error && <Text style={tw`text-red-500 mb-2`}>{error}</Text>}
+      {loading && <ActivityIndicator size="large" color="#60A5FA" style={tw`my-4`} />}
+      {error && <Text style={tw`text-red-500 mb-4`}>{error}</Text>}
       <FlatList
         data={searchResults}
         renderItem={renderCardItem}
         keyExtractor={item => item.id}
         numColumns={3}
+        contentContainerStyle={tw`pb-4`}
       />
     </View>
   );
