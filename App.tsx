@@ -359,10 +359,41 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setSelectedOpponent(opponent);
   };  
   
-  const handleBack = () => {
+  const handleBack = async () => {
     setScreen('welcome');
+    setIsMultiplayer(false);
+    setGameId(null);
+    setIsHost(false);
+    setRoomCode(null);
+    setCurrentPlayer(null);
+    setPlayers([]);
+    setGameHistory([]);
+    setGameEnded(false);
+    setShowJoinPopup(false);
+    setNewPlayerName('');
+    setSelectedOpponent(null);
+    setShowSettings(null);
+    setShowPresetModal(false);
+    setShowSavePresetModal(false);
+    setShowHistory(false);
+    setShowGameTimer(false);
+    setShowMiniTimer(false);
+    setShowDiceRoller(false);
+    setShowCardSearch(false);
+    setTimerDuration(0);
+    setIsTimerActive(false);
+    setTimeLeft(0);
+    setChangeBuffer({});
+    setCurrentPreset(null);
+    const updatedPresets = presets.map(p => ({ ...p, gameState: null }));
+    setPresets(updatedPresets);
+    try {
+      await AsyncStorage.setItem('presets', JSON.stringify(updatedPresets));
+    } catch (error) {
+      console.error('Failed to reset presets', error);
+    }
   };
-
+  
   const processEventQueue = useCallback(() => {
     if (eventQueueRef.current.length > 0) {
       const event = eventQueueRef.current.shift();
@@ -939,7 +970,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       <>
       <Pressable
         onPress={handleBack}
-      ><Ionicons style={tw `ml-6`}name="arrow-back" size={24} color="black" /></Pressable>
+      ><Ionicons style={tw `ml-8`} name="arrow-back-circle-sharp" size={38} color="gray" /></Pressable>
       <MultiplayerSetup 
         onCreateGame={handleCreateGame}
         onJoinGame={handleJoinGame}
@@ -951,8 +982,7 @@ const handlePoisonCountersChange = (playerId: string, amount: number) => {
       <>
       <Pressable
         onPress={handleBack}
-      ><Ionicons name="arrow-back" size={24} color="black" /></Pressable>
-      <Text style={tw`text-3xl font-bold text-center mb-4`}>MTG Life Counter</Text>
+      ><Ionicons style={tw `ml-8`} name="arrow-back-circle-sharp" size={38} color="gray" /></Pressable>
       {roomCode && <RoomCodeDisplay roomCode={roomCode} />}
       {showMiniTimer && (
         <Animated.View style={[tw`absolute top-4 right-4 bg-gray-800 p-2 rounded`, { opacity: miniTimerOpacity }]}>
