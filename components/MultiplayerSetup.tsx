@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Text, Pressable, TextInput, Image } from 'react-native';
 import tw from '../tailwind';
 
 interface MultiplayerSetupProps {
@@ -10,6 +10,17 @@ interface MultiplayerSetupProps {
 
 const MultiplayerSetup: React.FC<MultiplayerSetupProps> = ({ onCreateGame, onJoinGame, onBack }) => {
   const [gameId, setGameId] = useState('');
+
+  const getManaImage = (color: string) => {
+    switch (color) {
+      case 'W': return require('../assets/mana/white.png');
+      case 'U': return require('../assets/mana/blue.png');
+      case 'B': return require('../assets/mana/black.png');
+      case 'R': return require('../assets/mana/red.png');
+      case 'G': return require('../assets/mana/green.png');
+      default: return null;
+    }
+  };
 
   return (
     <View style={tw`flex-1 justify-between bg-gray-900 px-6 py-12`}>
@@ -51,24 +62,17 @@ const MultiplayerSetup: React.FC<MultiplayerSetupProps> = ({ onCreateGame, onJoi
         <Text style={tw`text-white text-center font-semibold text-lg`}>Back</Text>
       </Pressable>
 
-      <View style={tw`flex-row justify-center space-x-2 mt-8`}>
+      <View style={tw`flex-row justify-center`}>
         {['W', 'U', 'B', 'R', 'G'].map((color) => (
-          <View key={color} style={tw`w-8 h-8 mr-2 rounded-full ${getManaColor(color)}`} />
+          <Image
+            key={color}
+            source={getManaImage(color)}
+            style={tw`w-8 h-8 rounded-full mr-2`}
+          />
         ))}
       </View>
     </View>
   );
-};
-
-const getManaColor = (color: string) => {
-  switch (color) {
-    case 'W': return 'bg-yellow-300';
-    case 'U': return 'bg-blue-500';
-    case 'B': return 'bg-gray-700';
-    case 'R': return 'bg-red-500';
-    case 'G': return 'bg-green-500';
-    default: return 'bg-gray-500';
-  }
 };
 
 export default MultiplayerSetup;

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Image } from 'react-native';
 import tw from '../tailwind';
 
 interface WelcomeScreenProps {
@@ -8,6 +8,18 @@ interface WelcomeScreenProps {
 }
 
 const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartLocalGame, onHostSession }) => {
+
+  const getManaImage = (color: string) => {
+    switch (color) {
+      case 'W': return require('../assets/mana/white.png');
+      case 'U': return require('../assets/mana/blue.png');
+      case 'B': return require('../assets/mana/black.png');
+      case 'R': return require('../assets/mana/red.png');
+      case 'G': return require('../assets/mana/green.png');
+      default: return null;
+    }
+  };
+
   return (
     <View style={tw`flex-1 justify-between bg-gray-900 px-6 py-12`}>
       <View style={tw`items-center`}>
@@ -16,7 +28,7 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartLocalGame, onHostS
       </View>
 
       <View style={tw`space-y-6`}>
-        <Pressable 
+        <Pressable
           style={({ pressed }) => tw`${pressed ? 'bg-blue-700' : 'bg-blue-600'} p-4 mb-8 rounded-lg shadow-lg transition-colors`}
           onPress={onStartLocalGame}
         >
@@ -24,8 +36,8 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartLocalGame, onHostS
             Local Session
           </Text>
         </Pressable>
-        
-        <Pressable 
+
+        <Pressable
           style={({ pressed }) => tw`${pressed ? 'bg-red-700' : 'bg-red-600'} p-4 rounded-lg shadow-lg transition-colors`}
           onPress={onHostSession}
         >
@@ -37,22 +49,15 @@ const WelcomeScreen: React.FC<WelcomeScreenProps> = ({ onStartLocalGame, onHostS
 
       <View style={tw`flex-row justify-center`}>
         {['W', 'U', 'B', 'R', 'G'].map((color) => (
-          <View key={color} style={tw`w-8 h-8 rounded-full mr-2 ${getManaColor(color)}`} />
+          <Image
+            key={color}
+            source={getManaImage(color)}
+            style={tw`w-8 h-8 rounded-full mr-2`}
+          />
         ))}
       </View>
     </View>
   );
-};
-
-const getManaColor = (color: string) => {
-  switch (color) {
-    case 'W': return 'bg-yellow-300';
-    case 'U': return 'bg-blue-500';
-    case 'B': return 'bg-gray-700';
-    case 'R': return 'bg-red-500';
-    case 'G': return 'bg-green-500';
-    default: return 'bg-gray-500';
-  }
 };
 
 export default WelcomeScreen;

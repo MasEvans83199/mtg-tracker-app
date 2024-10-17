@@ -20,6 +20,7 @@ import WelcomeScreen from './components/WelcomeScreen';
 import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import PasswordReset from './components/PasswordReset';
+import Account from './components/Account';
 import { signOut } from '@react-native-firebase/auth';
 import firebase from './src/firebaseConfig';
 
@@ -38,6 +39,7 @@ interface MainContentProps {
 
 const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const [screen, setScreen] = useState<'welcome' | 'multiplayerSetup' | 'game'>('welcome');
+  const [showAccount, setShowAccount] = useState(false);
   const [players, setPlayers] = useState<Player[]>([]);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null);
@@ -975,9 +977,18 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       { icon: 'timer', color: 'indigo-400', onPress: () => setShowGameTimer(true) },
     ];
 
+  const AccountButton = () => (
+    <Pressable
+      style={tw`absolute top-4 right-4 z-10`}
+      onPress={() => setShowAccount(true)}
+    >
+      <Ionicons name="ellipsis-horizontal" size={24} color="#60A5FA" />
+    </Pressable>
+  );
 
   return (
     <View style={tw`flex-1 bg-gray-900 pt-12`}>
+      <AccountButton />
       {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'welcome' && (
         <WelcomeScreen
           onStartLocalGame={handleStartLocalGame}
@@ -1072,6 +1083,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
             }}
             onClose={() => setShowSettings(null)}
           />
+
+          <Account visible={showAccount} onClose={() => setShowAccount(false)} />
 
           {/* Preset Modal */}
           <Modal visible={showPresetModal} animationType="slide" transparent={true}>
