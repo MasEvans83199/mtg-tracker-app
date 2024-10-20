@@ -57,6 +57,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const [showMiniTimer, setShowMiniTimer] = useState(false);
+  const [showConfirmBack, setShowConfirmBack] = useState(false);
   const [miniTimerOpacity] = useState(new Animated.Value(1));
   const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
   const [showDiceRoller, setShowDiceRoller] = useState(false);
@@ -89,23 +90,28 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     });
     return () => unsubscribe();
   }, []);
-  
+
 
   useEffect(() => {
     if (isMultiplayer && gameId) {
       const unsubscribe = listenToGameState(gameId, (newGameState) => {
         if (newGameState) {
-          setPlayers(newGameState.players);
-          setGameHistory(newGameState.gameHistory);
-          setGameEnded(newGameState.gameEnded);
-
+          setPlayers(newGameState.players || []);
+          setGameHistory(newGameState.gameHistory || []);
+          setGameEnded(newGameState.gameEnded || false);
+  
+          if (newGameState.hostLeft && !isHost) {
+            alert("The host has left the session. You will be returned to the menu.");
+            resetGameState();
+          }
+  
           if (newGameState.gameEnded) {
-            const winner = newGameState.players.find((p: Player) => p.hasCrown);
+            const winner = (newGameState.players || []).find((p: Player) => p.hasCrown);
             if (winner) {
               console.log(`Game ended. Winner: ${winner.name}`);
               // Update current player if it exists
               if (currentPlayer) {
-                const updatedCurrentPlayer = newGameState.players.find((p: Player) => p.id === currentPlayer.id);
+                const updatedCurrentPlayer = (newGameState.players || []).find((p: Player) => p.id === currentPlayer.id);
                 if (updatedCurrentPlayer) {
                   setCurrentPlayer(updatedCurrentPlayer);
                 }
@@ -116,8 +122,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       });
       return () => unsubscribe();
     }
-  }, [isMultiplayer, gameId, currentPlayer]);
-
+  }, [isMultiplayer, gameId, currentPlayer, isHost]);
+  
   const loadPresets = async () => {
     try {
       const savedPresets = await AsyncStorage.getItem('presets');
@@ -368,24 +374,75 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       };
       setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
       setCurrentPlayer(newPlayer);
-  
+
       const updatedGameState = {
         players: [...players, newPlayer],
         gameHistory,
         gameEnded
       };
       await updateGameState(gameId, updatedGameState);
-  
+
       setShowJoinPopup(false);
       logEvent(`${newPlayer.name} joined the game`);
     }
   };
-  
+
   const handleOpponentPress = (opponent: Player) => {
     setSelectedOpponent(opponent);
   };
 
+  const handleHostLeave = async () => {
+    if (isMultiplayer && isHost && gameId) {
+      try {
+        const updatedGameState = {
+          players: [],
+          gameHistory: gameHistory ? [...gameHistory, 'Host has left the session.'] : ['Host has left the session.'],
+          gameEnded: true,
+          hostLeft: true
+        };
+        console.log('Updating game state:', updatedGameState);
+        await updateGameState(gameId, updatedGameState);
+      } catch (error) {
+        console.error('Failed to update game state', error);
+      }
+    }
+  };
+  
+  const handlePlayerLeave = async () => {
+    if (isMultiplayer && !isHost && gameId && currentPlayer) {
+      try {
+        const updatedPlayers = players.filter(p => p.id !== currentPlayer.id);
+        await updateGameState(gameId, {
+          players: updatedPlayers,
+          gameHistory: [...gameHistory, `${currentPlayer.name} has left the session.`],
+          gameEnded: gameEnded
+        });
+      } catch (error) {
+        console.error('Failed to update game state', error);
+      }
+    }
+  };
+
   const handleBack = async () => {
+    if (screen === 'game') {
+      setShowConfirmBack(true);
+    } else {
+      resetGameState();
+    }
+  };
+
+  const confirmBack = async () => {
+    if (isMultiplayer) {
+      if (isHost) {
+        await handleHostLeave();
+      } else {
+        await handlePlayerLeave();
+      }
+    }
+    resetGameState();
+  };
+
+  const resetGameState = () => {
     setScreen('welcome');
     setIsMultiplayer(false);
     setGameId(null);
@@ -411,15 +468,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setTimeLeft(0);
     setChangeBuffer({});
     setCurrentPreset(null);
-    const updatedPresets = presets.map(p => ({ ...p, gameState: null }));
-    setPresets(updatedPresets);
-    try {
-      await AsyncStorage.setItem('presets', JSON.stringify(updatedPresets));
-    } catch (error) {
-      console.error('Failed to reset presets', error);
-    }
   };
-
+  
   const processEventQueue = useCallback(() => {
     if (eventQueueRef.current.length > 0) {
       const event = eventQueueRef.current.shift();
@@ -1258,6 +1308,31 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
                 >
                   <Text style={tw`text-white text-center font-bold`}>Close</Text>
                 </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          <Modal visible={showConfirmBack} animationType="slide" transparent={true}>
+            <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+              <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
+                <Text style={tw`text-lg font-bold mb-2`}>Return to Menu?</Text>
+                <View style={tw`flex-row justify-center`}>
+                  <Pressable
+                    style={tw`bg-red-500 p-2 rounded mr-2`}
+                    onPress={async () => {
+                      setShowConfirmBack(false);
+                      await confirmBack();
+                    }}
+                  >
+                    <Text style={tw`text-white text-center font-bold`}>Yes</Text>
+                  </Pressable>
+                  <Pressable
+                    style={tw`bg-green-500 p-2 rounded`}
+                    onPress={() => setShowConfirmBack(false)}
+                  >
+                    <Text style={tw`text-white text-center font-bold`}>No</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </Modal>

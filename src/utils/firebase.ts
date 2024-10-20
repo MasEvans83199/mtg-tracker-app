@@ -23,18 +23,30 @@ export const joinGame = async (gameId: string, playerId: string): Promise<boolea
 };
 
 export const updateGameState = async (gameId: string, gameState: any) => {
-    let sanitizedGameHistory = [];
-    
-    if (gameState.gameHistory && Array.isArray(gameState.gameHistory)) {
-        sanitizedGameHistory = gameState.gameHistory.filter((event: string | undefined) => event !== undefined);
-    }
+  if (!gameId || !gameState) {
+      console.error('Invalid gameId or gameState');
+      return;
+  }
 
-    const sanitizedGameState = {
-        ...gameState,
-        gameHistory: sanitizedGameHistory
-    };
+  let sanitizedGameHistory = [];
+  
+  if (gameState.gameHistory && Array.isArray(gameState.gameHistory)) {
+      sanitizedGameHistory = gameState.gameHistory.filter((event: any) => event !== undefined && event !== null);
+  }
 
-    await db.ref(`games/${gameId}/gameState`).set(sanitizedGameState);
+  const sanitizedGameState = {
+      players: gameState.players || [],
+      gameHistory: sanitizedGameHistory,
+      gameEnded: gameState.gameEnded || false,
+      hostLeft: gameState.hostLeft || false
+  };
+
+  try {
+      await db.ref(`games/${gameId}/gameState`).set(sanitizedGameState);
+  } catch (error) {
+      console.error('Error updating game state:', error);
+      throw error;
+  }
 }
 
 export const listenToGameState = (gameId: string, callback: (gameState: any) => void) => {
