@@ -21,7 +21,7 @@ import SignIn from './components/SignIn';
 import SignUp from './components/SignUp';
 import PasswordReset from './components/PasswordReset';
 import Account from './components/Account';
-import { signOut } from '@react-native-firebase/auth';
+import { signOut, FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firebase from './src/firebaseConfig';
 
 import { updateGameState, listenToGameState, createGame, joinGame } from './src/utils/firebase';
@@ -40,6 +40,7 @@ interface MainContentProps {
 const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const [screen, setScreen] = useState<'welcome' | 'multiplayerSetup' | 'game'>('welcome');
   const [showAccount, setShowAccount] = useState(false);
+  const [currentUser, setCurrentUser] = useState<FirebaseAuthTypes.User | null>(null);
   const [players, setPlayers] = useState<Player[]>([]);
   const [presets, setPresets] = useState<Preset[]>([]);
   const [currentPreset, setCurrentPreset] = useState<Preset | null>(null);
@@ -81,6 +82,14 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   useEffect(() => {
     gameHistoryRef.current = gameHistory;
   }, [gameHistory]);
+
+  useEffect(() => {
+    const unsubscribe = firebase.auth().onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+  
 
   useEffect(() => {
     if (isMultiplayer && gameId) {
@@ -270,6 +279,22 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   }
 
   const handleStartLocalGame = () => {
+    if (currentUser) {
+      const newPlayer: Player = {
+        id: currentUser.uid,
+        name: currentUser.displayName || 'Player 1',
+        manaColor: 'white',
+        life: 40,
+        commanderDamage: 0,
+        poisonCounters: 0,
+        icon: currentUser.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
+        isDead: false,
+        hasCrown: false,
+        stats: getDefaultStats(),
+        isHost: true,
+      };
+      setPlayers([newPlayer]);
+    }
     setIsMultiplayer(false);
     setScreen('game');
   };
@@ -281,16 +306,16 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const handleCreateGame = async () => {
     const hostId = generateUniqueId();
     const newGameId = await createGame(hostId);
-    if (newGameId) {
+    if (currentUser && newGameId) {
       const newPlayer: Player = {
         id: hostId,
-        name: 'Host',
+        name: currentUser.displayName || 'Player 1',
         life: 40,
         manaColor: 'white',
         commanderDamage: 0,
         poisonCounters: 0,
         isDead: false,
-        icon: 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
+        icon: currentUser.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
         hasCrown: false,
         stats: getDefaultStats(),
         isHost: true,
@@ -326,38 +351,36 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     }
   };
 
-  const handlePlayerJoin = async () => {
-    if (newPlayerName.trim() && gameId) {
-      const playerId = generateUniqueId();
+  const handlePlayerJoin = async (gameId: string, user: FirebaseAuthTypes.User | null) => {
+    if (gameId && user) {
       const newPlayer: Player = {
-        id: playerId,
-        name: newPlayerName,
+        id: user.uid,
+        name: user.displayName || 'Player',
         life: 40,
         manaColor: 'blue',
         commanderDamage: 0,
         poisonCounters: 0,
         isDead: false,
-        icon: 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
+        icon: user.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
         hasCrown: false,
         stats: getDefaultStats(),
         isHost: false,
       };
       setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
       setCurrentPlayer(newPlayer);
-
+  
       const updatedGameState = {
         players: [...players, newPlayer],
         gameHistory,
         gameEnded
       };
       await updateGameState(gameId, updatedGameState);
-
+  
       setShowJoinPopup(false);
-      setNewPlayerName('');
       logEvent(`${newPlayer.name} joined the game`);
     }
   };
-
+  
   const handleOpponentPress = (opponent: Player) => {
     setSelectedOpponent(opponent);
   };
@@ -728,9 +751,12 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   const addPlayer = () => {
     if (players.length < 4) {
       const manaColors = ['white', 'blue', 'black', 'red', 'green'];
+      const newPlayerId = players.length + 1;
+      const basePlayerName = currentUser ? currentUser.displayName || 'Player' : 'Player';
+      const newPlayerName = players.length === 0 ? basePlayerName : `${basePlayerName}(${newPlayerId})`;
       const newPlayer: Player = {
-        id: (players.length + 1).toString(),
-        name: `Player ${players.length + 1}`,
+        id: newPlayerId.toString(),
+        name: newPlayerName,
         life: 40,
         manaColor: manaColors[players.length % manaColors.length],
         commanderDamage: 0,
@@ -1000,6 +1026,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
           onCreateGame={handleCreateGame}
           onJoinGame={handleJoinGame}
           onBack={handleBack}
+          currentUser={currentUser}
         />
       )}
       {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'game' && (
@@ -1192,15 +1219,21 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
           <Modal visible={showJoinPopup} animationType="slide" transparent={true}>
             <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
               <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
-                <Text style={tw`text-lg font-bold mb-2`}>Enter Your Name</Text>
-                <TextInput
-                  style={tw`border border-gray-300 rounded p-2 mb-4`}
-                  value={newPlayerName}
-                  onChangeText={setNewPlayerName}
-                  placeholder="Your Name"
-                />
+                {currentUser && !currentUser.displayName ? (
+                  <>
+                    <Text style={tw`text-lg font-bold mb-2`}>Enter Your Name</Text>
+                    <TextInput
+                      style={tw`border border-gray-300 rounded p-2 mb-4`}
+                      value={newPlayerName}
+                      onChangeText={setNewPlayerName}
+                      placeholder="Your Name"
+                    />
+                  </>
+                ) : (
+                  <Text style={tw`text-lg font-bold mb-2`}>Joining as {currentUser?.displayName}</Text>
+                )}
                 <Pressable
-                  onPress={handlePlayerJoin}
+                  onPress={() => gameId && handlePlayerJoin(gameId, currentUser)}
                   style={tw`bg-blue-500 p-2 rounded`}
                 >
                   <Text style={tw`text-white text-center font-bold`}>Join Game</Text>
@@ -1208,7 +1241,6 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
               </View>
             </View>
           </Modal>
-
 
           <Modal visible={!!selectedOpponent} animationType="slide" transparent={true}>
             <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>

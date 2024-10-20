@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput, Image } from 'react-native';
 import tw from '../tailwind';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 interface MultiplayerSetupProps {
   onCreateGame: () => void;
-  onJoinGame: (gameId: string) => void;
+  onJoinGame: (gameId: string, currentUser: FirebaseAuthTypes.User | null) => void;
   onBack: () => void;
+  currentUser: FirebaseAuthTypes.User | null;
 }
 
-const MultiplayerSetup: React.FC<MultiplayerSetupProps> = ({ onCreateGame, onJoinGame, onBack }) => {
+const MultiplayerSetup: React.FC<MultiplayerSetupProps> = ({ onCreateGame, onJoinGame, onBack, currentUser }) => {
   const [gameId, setGameId] = useState('');
 
   const getManaImage = (color: string) => {
@@ -49,7 +51,7 @@ const MultiplayerSetup: React.FC<MultiplayerSetupProps> = ({ onCreateGame, onJoi
 
         <Pressable 
           style={({ pressed }) => tw`${pressed ? 'bg-green-700' : 'bg-green-600'} p-4 rounded-lg shadow-lg transition-colors`}
-          onPress={() => onJoinGame(gameId)}
+          onPress={() => onJoinGame(gameId, currentUser)}
         >
           <Text style={tw`text-white text-center font-semibold text-lg`}>Join Game</Text>
         </Pressable>

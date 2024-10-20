@@ -29,7 +29,7 @@ const Account: React.FC<AccountProps> = ({ visible, onClose }) => {
             setUser(currentUser);
             if (currentUser) {
                 setDisplayName(currentUser.displayName || '');
-                setPhotoURL(currentUser.photoURL);
+                setPhotoURL(currentUser.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0');
             }
         });
         return () => unsubscribe();
