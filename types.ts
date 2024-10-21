@@ -38,4 +38,5 @@ export interface Player {
       gameHistory: string[];
       gameEnded: boolean;
     } | null;
+    isMultiplayer: boolean;
   }  

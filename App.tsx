@@ -2,7 +2,7 @@ import 'setimmediate';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import * as Font from 'expo-font';
 import { debounce } from 'lodash';
-import { View, Text, Pressable, Animated, Modal, TextInput } from 'react-native';
+import { View, Text, Pressable, Animated, Modal, TextInput, StatusBar } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { Ionicons } from '@expo/vector-icons';
@@ -99,17 +99,16 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
           setPlayers(newGameState.players || []);
           setGameHistory(newGameState.gameHistory || []);
           setGameEnded(newGameState.gameEnded || false);
-  
+
           if (newGameState.hostLeft && !isHost) {
             alert("The host has left the session. You will be returned to the menu.");
             resetGameState();
           }
-  
+
           if (newGameState.gameEnded) {
             const winner = (newGameState.players || []).find((p: Player) => p.hasCrown);
             if (winner) {
               console.log(`Game ended. Winner: ${winner.name}`);
-              // Update current player if it exists
               if (currentPlayer) {
                 const updatedCurrentPlayer = (newGameState.players || []).find((p: Player) => p.id === currentPlayer.id);
                 if (updatedCurrentPlayer) {
@@ -123,7 +122,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       return () => unsubscribe();
     }
   }, [isMultiplayer, gameId, currentPlayer, isHost]);
-  
+
   const loadPresets = async () => {
     try {
       const savedPresets = await AsyncStorage.getItem('presets');
@@ -202,47 +201,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     const auth = firebase.auth();
     try {
       await signOut(auth);
-      // The onAuthStateChanged listener in App.tsx will handle updating the UI
     } catch (error) {
       console.error('Error signing out: ', error);
-    }
-  };
-
-  const savePresetWithIds = async () => {
-    if (presetName.trim() === '') return;
-
-    const newPreset: Preset = {
-      id: Date.now().toString(),
-      name: presetName,
-      players,
-      gameState: null
-    };
-
-    const updatedPresets = [...presets, newPreset];
-    setPresets(updatedPresets);
-
-    try {
-      await AsyncStorage.setItem('presets', JSON.stringify(updatedPresets));
-      setPresetName('');
-      setShowSavePresetModal(false);
-    } catch (error) {
-      console.error('Failed to save preset', error);
-    }
-  };
-
-  const loadPresetByIds = (presetId: number | string) => {
-    const preset = presets.find(p => p.id === presetId);
-
-    if (preset) {
-      setPlayers(preset.players);
-
-      const currentPlayerFromPreset = preset.players.find(p => p.id === currentPlayer?.id);
-
-      if (currentPlayerFromPreset) {
-        setCurrentPlayer(currentPlayerFromPreset);
-      }
-
-      setShowPresetModal(false);
     }
   };
 
@@ -314,7 +274,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     const newGameId = await createGame(hostId);
     if (currentUser && newGameId) {
       const newPlayer: Player = {
-        id: hostId,
+        id: currentUser.uid,
         name: currentUser.displayName || 'Player 1',
         life: 40,
         manaColor: 'white',
@@ -330,19 +290,19 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       setCurrentPlayer(newPlayer);
       handleGameStart(newGameId, true);
       setScreen('game');
-
+  
       await updateGameState(newGameId, {
         players: [newPlayer],
         gameHistory: [],
         gameEnded: false
       });
-
+  
       logEvent('Game created');
     } else {
       console.error('Failed to create game');
     }
   };
-
+  
   const handleJoinGame = async (id: string) => {
     const playerId = generateUniqueId();
     const joined = await joinGame(id, playerId);
@@ -359,34 +319,52 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
 
   const handlePlayerJoin = async (gameId: string, user: FirebaseAuthTypes.User | null) => {
     if (gameId && user) {
-      const newPlayer: Player = {
-        id: user.uid,
-        name: user.displayName || 'Player',
-        life: 40,
-        manaColor: 'blue',
-        commanderDamage: 0,
-        poisonCounters: 0,
-        isDead: false,
-        icon: user.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
-        hasCrown: false,
-        stats: getDefaultStats(),
-        isHost: false,
-      };
-      setPlayers(prevPlayers => [...prevPlayers, newPlayer]);
-      setCurrentPlayer(newPlayer);
-
+      const existingPlayer = players.find(p => p.id === user.uid || p.name === user.displayName);
+      let updatedPlayer: Player;
+  
+      if (existingPlayer) {
+        updatedPlayer = {
+          ...existingPlayer,
+          id: user.uid,
+          name: user.displayName || existingPlayer.name,
+          icon: user.photoURL || existingPlayer.icon,
+          isHost: false,
+        };
+      } else {
+        updatedPlayer = {
+          id: user.uid,
+          name: user.displayName || 'Player',
+          life: 40,
+          manaColor: 'blue',
+          commanderDamage: 0,
+          poisonCounters: 0,
+          isDead: false,
+          icon: user.photoURL || 'https://gatherer.wizards.com/Handlers/Image.ashx?type=card&multiverseid=0',
+          hasCrown: false,
+          stats: getDefaultStats(),
+          isHost: false,
+        };
+      }
+  
+      const updatedPlayers = existingPlayer 
+        ? players.map(p => p.id === existingPlayer.id ? updatedPlayer : p)
+        : [...players, updatedPlayer];
+  
+      setPlayers(updatedPlayers);
+      setCurrentPlayer(updatedPlayer);
+  
       const updatedGameState = {
-        players: [...players, newPlayer],
-        gameHistory,
+        players: updatedPlayers,
+        gameHistory: [...gameHistory, `${updatedPlayer.name} joined the game`],
         gameEnded
       };
       await updateGameState(gameId, updatedGameState);
-
+  
       setShowJoinPopup(false);
-      logEvent(`${newPlayer.name} joined the game`);
+      logEvent(`${updatedPlayer.name} joined the game`);
     }
   };
-
+  
   const handleOpponentPress = (opponent: Player) => {
     setSelectedOpponent(opponent);
   };
@@ -407,7 +385,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
       }
     }
   };
-  
+
   const handlePlayerLeave = async () => {
     if (isMultiplayer && !isHost && gameId && currentPlayer) {
       try {
@@ -469,7 +447,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setChangeBuffer({});
     setCurrentPreset(null);
   };
-  
+
   const processEventQueue = useCallback(() => {
     if (eventQueueRef.current.length > 0) {
       const event = eventQueueRef.current.shift();
@@ -525,7 +503,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
         isDead: false,
         stats: p.stats || getDefaultStats()
       })),
-      gameState: null
+      gameState: null,
+      isMultiplayer: isMultiplayer
     };
     const updatedPresets = [...presets, newPreset];
     setPresets(updatedPresets);
@@ -558,11 +537,25 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   };
 
   const loadPreset = (preset: Preset) => {
-    if (preset.gameState) {
-      setPlayers(preset.gameState.players);
-      setGameHistory(preset.gameState.gameHistory);
-      setGameEnded(preset.gameState.gameEnded);
-    } else {
+    if (isMultiplayer && isHost && gameId) {
+      const hostPlayer = preset.players.find(p => p.isHost) || preset.players[0];
+      const otherPlayers = preset.players.filter(p => !p.isHost && p.id !== hostPlayer.id);
+      const updatedHostPlayer = {
+        ...hostPlayer,
+        id: currentUser?.uid || hostPlayer.id,
+        name: currentUser?.displayName || hostPlayer.name,
+        icon: currentUser?.photoURL || hostPlayer.icon,
+        isHost: true
+      };
+  
+      setPlayers([updatedHostPlayer, ...otherPlayers]);
+      setCurrentPlayer(updatedHostPlayer);
+      updateGameState(gameId, {
+        players: [updatedHostPlayer, ...otherPlayers],
+        gameHistory: ["Preset loaded by host"],
+        gameEnded: false
+      });
+    } else if (!isMultiplayer) {
       setPlayers(preset.players.map(p => ({
         ...p,
         life: 40,
@@ -577,7 +570,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     setCurrentPreset(preset);
     setShowPresetModal(false);
   };
-
+  
   const getDefaultStats = () => ({
     gamesPlayed: 0,
     wins: 0,
@@ -618,7 +611,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
           players,
           gameHistory,
           gameEnded
-        }
+        },
+        isMultiplayer: isMultiplayer,
       };
       const updatedPresets = [...presets, newPreset];
       setPresets(updatedPresets);
@@ -975,16 +969,13 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
         gameEnded: true
       };
 
-      // Update local state
       setPlayers(updatedPlayers);
       setGameHistory(updatedGameHistory);
       setGameEnded(true);
 
-      // Update Firebase state
       if (isMultiplayer && gameId) {
         await updateGameState(gameId, newGameState);
       }
-
       if (currentPreset) {
         const updatedPreset = {
           ...currentPreset,
@@ -1042,16 +1033,41 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
     color: string;
     onPress: () => void;
     disabled?: boolean;
+    showInMultiplayer: boolean;
+    hostOnly: boolean;
   }> = [
-      { icon: 'person-add', color: 'blue-400', onPress: addPlayer, disabled: gameEnded || players.length >= 4 },
-      { icon: 'refresh', color: 'red-400', onPress: resetGame },
-      { icon: 'clipboard', color: 'yellow-400', onPress: () => setShowPresetModal(true) },
-      { icon: 'list', color: 'orange-400', onPress: () => setShowHistory(true) },
-      { icon: 'save-outline', color: 'green-400', onPress: saveCurrentGameState },
-      { icon: 'search', color: 'purple-400', onPress: () => setShowCardSearch(true) },
-      { icon: 'dice', color: 'pink-400', onPress: () => setShowDiceRoller(true) },
-      { icon: 'timer', color: 'indigo-400', onPress: () => setShowGameTimer(true) },
+      { icon: 'person-add', color: 'blue-400', onPress: addPlayer, disabled: gameEnded || players.length >= 4, showInMultiplayer: false, hostOnly: false },
+      { icon: 'refresh', color: 'red-400', onPress: resetGame, showInMultiplayer: true, hostOnly: true },
+      { icon: 'clipboard', color: 'yellow-400', onPress: () => setShowPresetModal(true), showInMultiplayer: true, hostOnly: true },
+      { icon: 'list', color: 'orange-400', onPress: () => setShowHistory(true), showInMultiplayer: true, hostOnly: false },
+      { icon: 'save-outline', color: 'green-400', onPress: saveCurrentGameState, showInMultiplayer: true, hostOnly: true },
+      { icon: 'search', color: 'purple-400', onPress: () => setShowCardSearch(true), showInMultiplayer: true, hostOnly: false },
+      { icon: 'dice', color: 'pink-400', onPress: () => setShowDiceRoller(true), showInMultiplayer: true, hostOnly: false },
+      { icon: 'timer', color: 'indigo-400', onPress: () => setShowGameTimer(true), showInMultiplayer: true, hostOnly: false },
     ];
+
+    const BottomActionBar = () => (
+  <View style={tw`absolute bottom-0 left-0 right-0 bg-gray-800 rounded-t-2xl`}>
+    <View style={tw`flex-row justify-center p-4`}>
+      {actionItems
+        .filter(item => !isMultiplayer || (item.showInMultiplayer && (!item.hostOnly || isHost)))
+        .map((item, index) => (
+          <Pressable
+            key={index}
+            style={({ pressed }) => tw`mx-2 p-2 ${pressed ? 'bg-gray-700' : 'bg-gray-800'} rounded-full`}
+            onPress={item.onPress}
+            disabled={item.disabled}
+          >
+            <Ionicons
+              name={item.icon}
+              size={24}
+              color={item.disabled ? '#4B5563' : tw.color(item.color)}
+            />
+          </Pressable>
+        ))}
+    </View>
+  </View>
+);
 
   const AccountButton = () => (
     <Pressable
@@ -1063,7 +1079,8 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
   );
 
   return (
-    <View style={tw`flex-1 bg-gray-900 pt-12`}>
+    <View style={[tw`flex-1 bg-gray-900 pt-12`, {paddingTop: StatusBar.currentHeight}]}>
+    <StatusBar barStyle="light-content" backgroundColor="#111827" />
       <AccountButton />
       {(screen as 'welcome' | 'multiplayerSetup' | 'game') === 'welcome' && (
         <WelcomeScreen
@@ -1102,7 +1119,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
                 disabled={gameEnded || currentPlayer.isDead}
               />
               <OpponentsSection
-                opponents={players.filter(p => p.id !== currentPlayer.id)}
+                opponents={players.filter(p => p.id !== currentPlayer?.id )}
                 onOpponentPress={handleOpponentPress}
               />
             </View>
@@ -1132,23 +1149,7 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
               ))}
             </View>
           )}
-          <View style={tw`flex-row justify-center p-4 bg-gray-800 rounded-t-2xl`}>
-            {actionItems.map((item, index) => (
-              <Pressable
-                key={index}
-                style={({ pressed }) => tw`mx-2 p-2 ${pressed ? 'bg-gray-700' : 'bg-gray-800'} rounded-full`}
-                onPress={item.onPress}
-                disabled={item.disabled}
-              >
-                <Ionicons
-                  name={item.icon}
-                  size={24}
-                  color={item.disabled ? '#4B5563' : tw.color(item.color)}
-                />
-              </Pressable>
-            ))}
-          </View>
-
+          <BottomActionBar />
           <PlayerSettings
             visible={showSettings !== null}
             player={players.find(p => p.id === showSettings) || null}
@@ -1168,22 +1169,24 @@ const MainContent: React.FC<MainContentProps> = ({ user }) => {
             <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
               <View style={tw`bg-white p-4 rounded-lg w-4/5`}>
                 <Text style={tw`text-lg font-bold mb-2`}>Presets</Text>
-                {presets.map(preset => (
-                  <View key={preset.id} style={tw`flex-row items-center justify-between mb-2`}>
-                    <Pressable
-                      style={tw`flex-1 bg-blue-100 p-2 rounded mr-2`}
-                      onPress={() => loadPreset(preset)}
-                    >
-                      <Text>{preset.name}</Text>
-                    </Pressable>
-                    <Pressable onPress={() => editPreset(preset.id)}>
-                      <Ionicons name="pencil" size={24} color="blue" />
-                    </Pressable>
-                    <Pressable onPress={() => deletePreset(preset.id)}>
-                      <Ionicons name="trash" size={24} color="red" />
-                    </Pressable>
-                  </View>
-                ))}
+                {presets
+                  .filter(preset => preset.isMultiplayer === isMultiplayer)
+                  .map(preset => (
+                    <View key={preset.id} style={tw`flex-row items-center justify-between mb-2`}>
+                      <Pressable
+                        style={tw`flex-1 bg-blue-100 p-2 rounded mr-2`}
+                        onPress={() => loadPreset(preset)}
+                      >
+                        <Text>{preset.name}</Text>
+                      </Pressable>
+                      <Pressable onPress={() => editPreset(preset.id)}>
+                        <Ionicons name="pencil" size={24} color="blue" />
+                      </Pressable>
+                      <Pressable onPress={() => deletePreset(preset.id)}>
+                        <Ionicons name="trash" size={24} color="red" />
+                      </Pressable>
+                    </View>
+                  ))}
                 <Pressable
                   style={tw`bg-green-500 p-2 rounded mt-2`}
                   onPress={() => setShowSavePresetModal(true)}
